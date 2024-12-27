@@ -11,3 +11,15 @@ services:
       - NIFI_WEB_HTTPS_PORT=8443
       - SINGLE_USER_CREDENTIALS_USERNAME=admin
       - SINGLE_USER_CREDENTIALS_PASSWORD=ctsBtRBKHRAx69EqUghvvgEvjnaLjFEB
+
+  vue-app:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: vue-app
+    ports:
+      - "5173:5173"
+    command: npm run dev
+    volumes:
+      - ./web:/app
+      - /app/node_modules
