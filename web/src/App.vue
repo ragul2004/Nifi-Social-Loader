@@ -8,9 +8,13 @@ const pages = ref([])
 
 const fetchPageInfo = async () => {
   try {
+    const pageIds = pageLinks.value.split('\n').map(link => {
+      // Trim and remove 'https://', 'http://', and 'vk.com/' if present
+      return link.trim().replace(/^(https?:\/\/)?(www\.)?vk\.com\//, '')
+    })
     const response = await axios.post('http://localhost:8081/contentListener', {
       source: 'VK',
-      pageIds: pageLinks.value.split(',').map(link => link.trim())
+      pageIds: pageIds
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -27,12 +31,12 @@ const fetchPageInfo = async () => {
 <template>
   <div class="p-4">
     <div class="mb-4">
-      <input
+      <textarea
         v-model="pageLinks"
-        type="text"
-        placeholder="Enter VK page links, separated by commas"
+        placeholder="Enter VK page links, each on a new line"
         class="border p-2 w-full mb-2"
-      />
+        rows="4"
+      ></textarea>
       <input
         v-model="token"
         type="text"
