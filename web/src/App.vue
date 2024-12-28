@@ -21,7 +21,15 @@ const fetchPageInfo = async () => {
         'Authorization': `Bearer ${token.value}`
       }
     })
-    pages.value = response.data.pages
+    pages.value = response.data.pages.map(page => {
+      if (page.error) {
+        return {
+          ...page,
+          errorMessage: `Error in page ${page.group_id}: ${page.error.error_msg}`
+        }
+      }
+      return page
+    })
   } catch (error) {
     console.error('Error fetching page info:', error)
   }
@@ -57,15 +65,17 @@ const fetchPageInfo = async () => {
         :key="page.id"
         class="border p-4 rounded shadow"
       >
-        <img :src="page.photo_50" alt="Page icon" class="w-12 h-12 mb-2" />
+        <img v-if="!page.error" :src="page.photo_50" alt="Page icon" class="w-12 h-12 mb-2" />
         <h2 class="text-lg font-bold">{{ page.name }}</h2>
         <a
+          v-if="!page.error"
           :href="'https://vk.com/' + page.screen_name"
           target="_blank"
           class="text-blue-500"
         >
           Visit Page
         </a>
+        <p v-if="page.error" class="text-red-500">{{ page.errorMessage }}</p>
       </div>
     </div>
   </div>
