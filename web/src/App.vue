@@ -9,9 +9,9 @@ const pages = ref([])
 const fetchPageInfo = async () => {
   try {
     const pageIds = pageLinks.value.split('\n').map(link => {
-      // Trim and remove 'https://', 'http://', and 'vk.com/' if present
       return link.trim().replace(/^(https?:\/\/)?(www\.)?vk\.com\//, '')
     })
+    
     const response = await axios.post('http://localhost:8081/contentListener', {
       source: 'VK',
       pageIds: pageIds
@@ -21,14 +21,21 @@ const fetchPageInfo = async () => {
         'Authorization': `Bearer ${token.value}`
       }
     })
-    pages.value = response.data.pages.map(page => {
-      if (page.error) {
+
+    pages.value = response.data.map(item => {
+      if (item.error) {
         return {
-          ...page,
-          errorMessage: `Error in page ${page.group_id}: ${page.error.error_msg}`
+          isError: true,
+          platform: item.platform,
+          query: item.query,
+          errorMessage: item.error.error_msg
         }
       }
-      return page
+      return {
+        isError: false,
+        ...item.data,
+        platform: item.platform
+      }
     })
   } catch (error) {
     console.error('Error fetching page info:', error)
@@ -62,25 +69,35 @@ const fetchPageInfo = async () => {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div
         v-for="page in pages"
-        :key="page.id"
+        :key="page.id || page.query"
         class="border p-4 rounded shadow"
       >
-        <img v-if="!page.error" :src="page.photo_50" alt="Page icon" class="w-12 h-12 mb-2" />
-        <h2 class="text-lg font-bold">{{ page.name }}</h2>
-        <a
-          v-if="!page.error"
-          :href="'https://vk.com/' + page.screen_name"
-          target="_blank"
-          class="text-blue-500"
-        >
-          Visit Page
-        </a>
-        <p v-if="page.error" class="text-red-500">{{ page.errorMessage }}</p>
+        <template v-if="!page.isError">
+          <img
+            :src="page.photo_50"
+            alt="Page icon"
+            class="w-12 h-12 mb-2"
+          />
+          <h2 class="text-lg font-bold">{{ page.name }}</h2>
+          <a
+            :href="'https://vk.com/' + page.screen_name"
+            target="_blank"
+            class="text-blue-500"
+          >
+            Visit Page
+          </a>
+        </template>
+
+        <template v-else>
+          <h2 class="text-lg font-bold text-red-500">
+            Error on platform {{ page.platform }} for page {{ page.query }}
+          </h2>
+          <p class="text-red-500">{{ page.errorMessage }}</p>
+        </template>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Tailwind CSS is used for styling, so no additional styles are needed here */
 </style>
