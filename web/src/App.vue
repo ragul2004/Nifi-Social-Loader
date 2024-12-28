@@ -3,24 +3,27 @@ import { ref } from 'vue'
 import axios from 'axios'
 
 const pageLinks = ref('')
-const token = ref('')
+const vkToken = ref('')
+const instagramToken = ref('')
 const pages = ref([])
 
 const fetchPageInfo = async () => {
   try {
     const pageIds = pageLinks.value.split('\n').map(link => {
-      return link.trim().replace(/^(https?:\/\/)?(www\.)?vk\.com\//, '')
-    })
-    
+      const id = link.trim().replace(/^(https?:\/\/)?(www\.)?(vk\.com|instagram\.com)\//, '');
+      const source = link.includes('vk.com') ? 'VK' : 'Instagram';
+      return { id, source };
+    });
+
     const response = await axios.post('http://localhost:8081/contentListener', {
-      source: 'VK',
-      pageIds: pageIds
+      pages: pageIds,
+      vkToken: vkToken.value,
+      instagramToken: instagramToken.value
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token.value}`
       }
-    })
+    });
 
     pages.value = response.data.map(item => {
       if (item.error) {
@@ -29,18 +32,18 @@ const fetchPageInfo = async () => {
           platform: item.platform,
           query: item.query,
           errorMessage: item.error.error_msg
-        }
+        };
       }
       return {
         isError: false,
         ...item.data,
         platform: item.platform
-      }
-    })
+      };
+    });
   } catch (error) {
-    console.error('Error fetching page info:', error)
+    console.error('Error fetching page info:', error);
   }
-}
+};
 </script>
 
 <template>
@@ -48,14 +51,20 @@ const fetchPageInfo = async () => {
     <div class="mb-4">
       <textarea
         v-model="pageLinks"
-        placeholder="Enter VK page links, each on a new line"
+        placeholder="Enter VK or Instagram page links, each on a new line"
         class="border p-2 w-full mb-2"
         rows="4"
       ></textarea>
       <input
-        v-model="token"
+        v-model="vkToken"
         type="text"
-        placeholder="Enter your token"
+        placeholder="Enter your VK token"
+        class="border p-2 w-full mb-2"
+      />
+      <input
+        v-model="instagramToken"
+        type="text"
+        placeholder="Enter your Instagram token"
         class="border p-2 w-full mb-2"
       />
       <button
@@ -80,7 +89,7 @@ const fetchPageInfo = async () => {
           />
           <h2 class="text-lg font-bold">{{ page.name }}</h2>
           <a
-            :href="'https://vk.com/' + page.screen_name"
+            :href="'https://' + page.platform + '.com/' + page.screen_name"
             target="_blank"
             class="text-blue-500"
           >
