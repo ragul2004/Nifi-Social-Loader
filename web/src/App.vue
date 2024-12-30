@@ -12,13 +12,12 @@ const fetchPageInfo = async () => {
     const pageIds = pageLinks.value.split('\n').map(link => {
       const id = link.trim().replace(/^(https?:\/\/)?(www\.)?(vk\.com|instagram\.com)\//, '');
       const source = link.includes('vk.com') ? 'VK' : 'Instagram';
-      return { id, source };
+      const token = source === 'VK' ? vkToken.value : instagramToken.value;
+      return { id, source, token };
     });
 
     const response = await axios.post('http://localhost:8081/contentListener', {
-      pages: pageIds,
-      vkToken: vkToken.value,
-      instagramToken: instagramToken.value
+      pages: pageIds
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -83,7 +82,7 @@ const fetchPageInfo = async () => {
       >
         <template v-if="!page.isError">
           <img
-            :src="page.photo_50"
+            :src="page.photo"
             alt="Page icon"
             class="w-12 h-12 mb-2"
           />
